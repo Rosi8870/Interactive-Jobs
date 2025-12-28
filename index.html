@@ -60,14 +60,14 @@
 <script src="firebase.js"></script>
 <script src="script.js"></script>
 <script>
-// Critical: Expose these so firebase.js can update the job list and show announcements
+// Expose functions for firebase.js to update UI
 window.render = render;
-window.showToast = showToast;  // For announcement toast
+window.showToast = showToast;
 
-// Show announcement on page load if exists
+// Show announcement on load
 window.addEventListener('load', () => {
   const ann = localStorage.getItem('announcement');
-  if (ann) showToast(ann, 8000);
+  if (ann) showToast(ann, 10000);
 });
 </script>
 </body>
