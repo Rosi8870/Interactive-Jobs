@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interactive Jobs</title>
+
+<link rel="stylesheet" href="style.css" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+</head>
+<body>
+
+<header class="top-header">
+  <h1>Interactive Jobs</h1>
+  <p>Latest verified walk-ins & job openings</p>
+</header>
+
+<div class="search-wrapper">
+  <input id="search" placeholder="Search job title, role, company..." />
+</div>
+
+<section class="jobs" id="jobList"></section>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toastText"></span>
+  <button onclick="hideToast()">✕</button>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="modal">
+  <div class="modal-card" id="modalCard" tabindex="0">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <h2 id="mTitle"></h2>
+    <pre id="mBody"></pre>
+    <a id="mApply" target="_blank" class="apply-btn">Apply Now</a>
+  </div>
+</div>
+
+<!-- iOS Dock -->
+<div class="dock" id="dock">
+  <div class="dock-item" onclick="scrollToTop()">
+    <span class="material-icons">home</span>
+    <span>Home</span>
+  </div>
+  <div class="dock-item" onclick="openTelegram()">
+    <span class="material-icons">chat</span>
+    <span>Telegram</span>
+  </div>
+  <div class="dock-item" onclick="openWhatsApp()">
+    <span class="material-icons">message</span>
+    <span>WhatsApp</span>
+  </div>
+  <div class="dock-item" onclick="showAnnouncement()">
+    <span class="material-icons">notifications</span>
+    <span>Alert</span>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

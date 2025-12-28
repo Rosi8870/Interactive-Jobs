@@ -1,0 +1,237 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root{
+  --bg: #0b1016;
+  --surface: rgba(255,255,255,0.035);
+  --surface-2: rgba(255,255,255,0.02);
+  --text: #e6eef8;
+  --muted: rgba(255,255,255,0.72);
+  --subtle: rgba(255,255,255,0.06);
+  --accent: #0a84ff;
+  --accent-strong: #0066d6;
+  --danger: #ef4444;
+  --radius: 12px;
+  --gutter: 20px;
+  --shadow: 0 8px 30px rgba(2,6,23,0.55);
+}
+
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-y: auto;
+  line-height:1.45;
+}  
+
+/* Header */
+.top-header {
+  text-align: center;
+  padding: 24px var(--gutter) 12px;
+  max-width: 1200px;
+  margin: 0 auto 6px auto;
+}
+
+.top-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.top-header p {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-top:6px;
+}
+
+@media (min-width: 768px){
+  .top-header{ padding:32px var(--gutter) 18px; }
+  .top-header h1{ font-size:1.75rem }
+} 
+
+/* Search */
+.search-wrapper {
+  padding: 10px var(--gutter);
+  display:flex; justify-content:center;
+}
+
+.search-wrapper input {
+  width: 100%;
+  max-width: 720px;
+  display: block;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--subtle);
+  color: var(--text);
+  outline: none;
+  box-shadow: none;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+.search-wrapper input:focus{
+  border-color: var(--accent-strong);
+  box-shadow: 0 6px 18px rgba(10,132,255,0.08);
+} 
+
+/* Jobs */
+.jobs {
+  padding: 10px 16px calc(120px + env(safe-area-inset-bottom, 0px));
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+} 
+
+.jobs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Job Card */
+.job-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: var(--shadow);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  cursor:pointer;
+}
+
+.job-card:hover{ transform: translateY(-4px); box-shadow: 0 18px 40px rgba(2,6,23,0.65); }
+.job-card:active{ transform: translateY(-1px); }
+
+.job-card h3 { font-size:1.05rem; margin-bottom:6px; font-weight:700 }
+.job-card p { font-size:0.92rem; color:var(--muted); margin:0 }
+
+
+/* Dock */
+.dock {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  padding: 10px 16px;
+  background: rgba(20,24,28,0.85);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.04);
+  z-index: 9999;
+}
+
+/* Modal */
+.modal { z-index: 10000; }
+.modal-card{ max-width:640px; border-radius:14px; padding:20px 22px 28px; box-shadow:var(--shadow); }
+.modal.show .modal-card{ transform: translateY(0); }
+
+
+/* Dock Item */
+.dock-item {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+@media (hover: hover) {
+  .dock-item:hover {
+    background: rgba(255,255,255,0.08);
+  }
+}
+
+.dock-item:active {
+  transform: scale(0.92);
+}
+
+.dock-item .material-icons {
+  font-size: 24px;
+}
+
+.dock-item span:last-child {
+  font-size: 10px;
+  margin-top: 4px;
+  opacity: 0.65;
+}
+
+/* Buttons (global) */
+.btn { display:inline-block; padding:10px 14px; border-radius:10px; font-weight:600; cursor:pointer; text-align:center }
+.btn-primary{ background:var(--accent); color:white; border:none }
+.btn-primary-outline{ background:transparent; color:var(--accent); border:1px solid rgba(10,132,255,0.12) }
+
+/* Toast */
+.toast { position: fixed; top: 18px; right: 18px; background: rgba(20,24,28,0.95); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); display: flex; gap: 10px; transform: translateX(130%); opacity: 0; transition: 0.28s ease; z-index: 9000; }
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast button{ background:none; border:none; color:var(--muted); font-size:16px }
+
+.toast button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 520px;
+  background: rgba(28,28,30,0.95);
+  backdrop-filter: blur(24px);
+  border-radius: 22px 22px 0 0;
+  padding: 20px 22px 36px;
+  transform: translateY(40px);
+  transition: transform 0.4s ease;
+}
+
+.modal.show .modal-card {
+  transform: translateY(0);
+}
+
+.close-btn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: white;
+}
+
+.apply-btn {
+  display: block;
+  margin-top: 18px;
+  padding: 12px;
+  text-align: center;
+  border-radius: 14px;
+  background: #0a84ff;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}

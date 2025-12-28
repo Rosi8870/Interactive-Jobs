@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Job</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header><h1>Job Details</h1></header>
+
+<div class="container">
+<div class="card details" id="job"></div>
+</div>
+
+<div class="dock">
+<a href="index.html">⬅️</a>
+<a id="apply">🚀</a>
+</div>
+
+<script src="jobs.js"></script>
+<script>
+const id=new URLSearchParams(location.search).get("id");
+const j=jobs.find(x=>x.id===id);
+job.innerHTML=`
+<h3>${j.title}</h3>
+<p>✳️ ${j.role}</p>
+<p>❇️ ${j.qualification}</p>
+<p>🃏 ${j.experience}</p>
+<p>🔔 ${j.date}</p>`;
+apply.href=j.apply;
+</script>
+
+</body>
+</html>
