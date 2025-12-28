@@ -57,12 +57,19 @@
   </div>
 </div>
 
-<script src="firebase-config.js"></script> <!-- Load config first (optional but recommended) -->
 <script src="firebase.js"></script>
 <script src="script.js"></script>
 <script>
-  // Expose render for Firestore listener in firebase.js
+  // Critical: Expose render so Firebase listener can update UI
   window.render = render;
+  window.renderAnnouncementAdmin = renderAnnouncementAdmin; // If you have announcement render
+  window.showToastAdmin = showToastAdmin; // For announcement toast
+
+  // Optional: Show announcement on load
+  window.addEventListener('load', () => {
+    const ann = localStorage.getItem('announcement');
+    if (ann) showToast(ann); // Or showAnnouncement() if you have it
+  });
 </script>
 </body>
 </html>
