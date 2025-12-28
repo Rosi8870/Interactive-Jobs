@@ -60,16 +60,15 @@
 <script src="firebase.js"></script>
 <script src="script.js"></script>
 <script>
-  // Critical: Expose render so Firebase listener can update UI
-  window.render = render;
-  window.renderAnnouncementAdmin = renderAnnouncementAdmin; // If you have announcement render
-  window.showToastAdmin = showToastAdmin; // For announcement toast
+// Critical: Expose these so firebase.js can update the job list and show announcements
+window.render = render;
+window.showToast = showToast;  // For announcement toast
 
-  // Optional: Show announcement on load
-  window.addEventListener('load', () => {
-    const ann = localStorage.getItem('announcement');
-    if (ann) showToast(ann); // Or showAnnouncement() if you have it
-  });
+// Show announcement on page load if exists
+window.addEventListener('load', () => {
+  const ann = localStorage.getItem('announcement');
+  if (ann) showToast(ann, 8000);
+});
 </script>
 </body>
 </html>
