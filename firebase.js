@@ -14,7 +14,7 @@
 
   function init(){
     try{
-      const config = window.FIREBASE_CONFIG || { projectId: "your-project-id" }; // Minimal for read
+      const config = window.FIREBASE_CONFIG || { projectId: "StorageDE" }; // Minimal for read
       firebase.initializeApp(config);
       const db = firebase.firestore();
       window.firebaseEnabled = true;
