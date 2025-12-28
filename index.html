@@ -57,6 +57,12 @@
   </div>
 </div>
 
+<script src="firebase-config.js"></script> <!-- Load config first (optional but recommended) -->
+<script src="firebase.js"></script>
 <script src="script.js"></script>
+<script>
+  // Expose render for Firestore listener in firebase.js
+  window.render = render;
+</script>
 </body>
 </html>

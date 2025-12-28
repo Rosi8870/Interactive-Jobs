@@ -126,8 +126,23 @@ body {
 
 /* Modal */
 .modal { z-index: 10000; }
-.modal-card{ max-width:640px; border-radius:14px; padding:20px 22px 28px; box-shadow:var(--shadow); }
+.modal-card{ max-width:640px; border-radius:14px; padding:20px 22px 28px; box-shadow:var(--shadow); max-height: 75vh; overflow:auto }
 .modal.show .modal-card{ transform: translateY(0); }
+
+/* Prevent long URLs or text from overflowing cards/modals */
+.modal-card pre,
+#detailRaw,
+.job-card p,
+.admin-jobs #jobsListAdmin div,
+.apply-btn {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.modal-card pre{ max-height: 50vh; overflow:auto; padding:0; background:transparent }
+.apply-btn{ display:inline-block; max-width:100%; }
+
 
 
 /* Dock Item */
