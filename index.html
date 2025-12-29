@@ -50,8 +50,8 @@
       <input id="applyEmail" type="email" placeholder="Email" class="apply-input">
       <input id="applyPhone" placeholder="Phone (optional)" class="apply-input">
       <input type="file" id="applyResume" accept=".pdf,.doc,.docx" style="margin:12px 0;padding:10px;background:rgba(255,255,255,0.08);border-radius:12px;color:white">
-      <a id="mApply" target="_blank" class="apply-btn">Apply on Company Site</a>
-      <button onclick="quickApply()" class="apply-btn" style="margin-top:10px;background:#0a84ff">Send Resume via Email</button>
+      <a id="mApply" target="_blank" class="apply-btn" onclick="incrementApply(modal.dataset.jobId)">Apply on Company Site</a>
+      <button onclick="quickApply(modal.dataset.jobId)" class="apply-btn" style="margin-top:10px;background:#0a84ff">Send Resume via Email</button>
     </div>
 
     <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">

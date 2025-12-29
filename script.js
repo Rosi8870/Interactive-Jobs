@@ -47,6 +47,21 @@ function extractTags(raw) {
   return known.filter(tag => lower.includes(tag));
 }
 
+// Increment View & Apply in Firestore
+function incrementView(jobId) {
+  if (!jobId || !window.firebaseEnabled) return;
+  firebase.firestore().collection('jobs').doc(jobId).update({
+    views: firebase.firestore.FieldValue.increment(1)
+  }).catch(() => {}); // Silent if offline
+}
+
+function incrementApply(jobId) {
+  if (!jobId || !window.firebaseEnabled) return;
+  firebase.firestore().collection('jobs').doc(jobId).update({
+    applies: firebase.firestore.FieldValue.increment(1)
+  }).catch(() => {});
+}
+
 // Render jobs
 function render(list = loadJobs()) {
   jobList.innerHTML = "";
@@ -153,21 +168,6 @@ function copyFallback(url) {
     });
 }
 
-// Increment View & Apply
-function incrementView(jobId) {
-  if (!jobId || !window.firebaseEnabled) return;
-  firebase.firestore().collection('jobs').doc(jobId).update({
-    views: firebase.firestore.FieldValue.increment(1)
-  }).catch(() => {});
-}
-
-function incrementApply(jobId) {
-  if (!jobId || !window.firebaseEnabled) return;
-  firebase.firestore().collection('jobs').doc(jobId).update({
-    applies: firebase.firestore.FieldValue.increment(1)
-  }).catch(() => {});
-}
-
 // Quick Apply (with apply count)
 function quickApply(jobId) {
   const name = document.getElementById("applyName").value.trim();
@@ -204,7 +204,7 @@ function openModal(job) {
   mApply.style.display = job.apply ? 'block' : 'none';
   modal.dataset.jobId = job.id || '';
 
-  // Increment view count
+  // Increment view count when modal opens
   incrementView(job.id);
 
   modal.classList.add("show");
@@ -335,13 +335,12 @@ chatInput?.addEventListener('keypress', e => {
   }
 });
 
-// Initial load - stable
+// Initial load
 window.addEventListener('load', () => {
-  render(); // Immediate render from localStorage
+  render();
   const ann = localStorage.getItem('announcement');
   if (ann) showToast(ann, 12000);
 
-  // Re-render after Firebase sync
   setTimeout(render, 1500);
 });
 
