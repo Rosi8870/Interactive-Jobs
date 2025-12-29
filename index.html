@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" manifest="manifest.json">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Interactive Jobs</title>
-<meta name="description" content="Latest walk-ins, freshers & experienced job openings - real-time updates">
+<meta name="description" content="Latest walk-ins, freshers & experienced job openings">
 <meta name="theme-color" content="#0b1016">
 
 <link rel="stylesheet" href="style.css" />
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+<!-- PWA Manifest (use placeholder icons to avoid 404) -->
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- Fallback icons (simple base64 placeholders to avoid 404 errors) -->
+<link rel="apple-touch-icon" sizes="192x192" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+<link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
 </head>
 <body>
 
@@ -19,7 +24,6 @@
   <p>Latest verified walk-ins & job openings</p>
 </header>
 
-<!-- Small Clean Search -->
 <div class="search-wrapper">
   <input id="search" placeholder="🔍 Search job title, company, location, skills..." />
 </div>
@@ -40,7 +44,6 @@
     <div id="mTags" style="margin:12px 0;display:flex;flex-wrap:wrap;gap:8px"></div>
     <pre id="mBody"></pre>
 
-    <!-- Quick Apply -->
     <div id="quickApply" style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
       <h3 style="margin-bottom:14px">🚀 Quick Apply</h3>
       <input id="applyName" placeholder="Your Name" class="apply-input">
@@ -51,7 +54,6 @@
       <button onclick="quickApply()" class="apply-btn" style="margin-top:10px;background:#0a84ff">Send Resume via Email</button>
     </div>
 
-    <!-- Chat Button -->
     <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
       <button onclick="openChat(modal.dataset.jobId)" class="apply-btn" style="background:#25D366;color:white">💬 Chat with Poster (Anonymous)</button>
     </div>
@@ -71,7 +73,7 @@
   </div>
 </div>
 
-<!-- Dock (Map icon removed) -->
+<!-- Dock -->
 <div class="dock" id="dock">
   <div class="dock-item" onclick="showView('home')">
     <span class="material-icons">home</span>
@@ -98,18 +100,17 @@
 <script src="firebase.js"></script>
 <script src="script.js"></script>
 <script>
-// PWA Install
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
+// Show announcement when Alert icon clicked
+function showAnnouncement() {
+  const ann = localStorage.getItem('announcement');
+  if (ann) {
+    showToast(ann, 15000); // Longer duration
+  } else {
+    showToast("No current announcement", 4000);
+  }
+}
 
-// Expose for firebase.js
-window.render = render;
-window.showToast = showToast;
-
-// Show announcement
+// Show on load
 window.addEventListener('load', () => {
   const ann = localStorage.getItem('announcement');
   if (ann) showToast(ann, 12000);

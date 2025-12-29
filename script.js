@@ -18,22 +18,19 @@ let currentView = 'home';
 let currentChatJobId = null;
 let chatUnsubscribe = null;
 
-// Safely load jobs with tags
+// Load jobs safely with fallback
 function loadJobs() {
   try {
     const stored = JSON.parse(localStorage.getItem("jobs") || "[]");
-    return stored.map(j => ({
+    return Array.isArray(stored) ? stored.map(j => ({
       id: j.id || '',
       title: j.title || 'Untitled Job',
       raw: j.raw || '',
       apply: j.apply || '',
-      views: j.views || 0,
-      applies: j.applies || 0,
-      createdAt: j.createdAt || 0,
       tags: extractTags(j.raw || '')
-    }));
+    })) : [];
   } catch (e) {
-    console.error("Failed to load jobs:", e);
+    console.error("Load jobs failed:", e);
     return [];
   }
 }
@@ -52,7 +49,7 @@ function render(list = loadJobs()) {
   let filtered = list;
 
   if (q) {
-    filtered = list.filter(j => 
+    filtered = filtered.filter(j => 
       (j.title || '').toLowerCase().includes(q) ||
       (j.raw || '').toLowerCase().includes(q)
     );
@@ -77,10 +74,10 @@ function render(list = loadJobs()) {
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:start">
         <div style="flex:1">
-          <h3>${job.title || 'Untitled'}</h3>
+          <h3>${job.title}</h3>
           <p>${excerpt || 'No description'}</p>
           <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
-            ${job.tags.map(t => `<span style="padding:4px 10px;border-radius:10px;background:#0a84ff33;color:#0a84ff;font-size:0.85rem">${t.toUpperCase()}</span>`).join('') || ''}
+            ${(job.tags || []).map(t => `<span style="padding:4px 10px;border-radius:10px;background:#0a84ff33;color:#0a84ff;font-size:0.85rem">${t.toUpperCase()}</span>`).join('')}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px">
@@ -98,19 +95,15 @@ function render(list = loadJobs()) {
 function toggleFavorite(id) {
   if (!id) return;
   let favs = JSON.parse(localStorage.getItem("favorites") || "[]");
-  if (favs.includes(id)) {
-    favs = favs.filter(f => f !== id);
-  } else {
-    favs.push(id);
-  }
+  if (favs.includes(id)) favs = favs.filter(f => f !== id);
+  else favs.push(id);
   localStorage.setItem("favorites", JSON.stringify(favs));
   render();
 }
 
 function isFavorite(id) {
   if (!id) return false;
-  const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
-  return favs.includes(id);
+  return JSON.parse(localStorage.getItem("favorites") || "[]").includes(id);
 }
 
 // Share
@@ -135,20 +128,11 @@ function shareJob(job) {
 function quickApply() {
   const name = document.getElementById("applyName").value.trim();
   const email = document.getElementById("applyEmail").value.trim();
-  const phone = document.getElementById("applyPhone").value.trim();
-
-  if (!name || !email) {
-    showToast("Name and email are required");
-    return;
-  }
-
-  const subject = encodeURIComponent(`Job Application: ${mTitle.innerText || 'Position'}`);
-  const body = encodeURIComponent(
-    `Hi,\n\nMy name is ${name}.\nEmail: ${email}\n${phone ? 'Phone: ' + phone + '\n' : ''}\n\nI am interested in this job opportunity.\n\nThank you!`
-  );
-
+  if (!name || !email) return showToast("Name and email required");
+  const subject = encodeURIComponent(`Application: ${mTitle.innerText || 'Position'}`);
+  const body = encodeURIComponent(`Hi,\n\nName: ${name}\nEmail: ${email}\n\nI'm interested in this job.\n\nThanks!`);
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  showToast("Opening your email app...");
+  showToast("Opening email client...");
 }
 
 // Search
@@ -159,9 +143,7 @@ function openModal(job) {
   if (!job) return;
   mTitle.innerText = job.title || 'Untitled Job';
   mBody.innerText = job.raw || 'No description available';
-  mTags.innerHTML = job.tags && job.tags.length > 0 
-    ? job.tags.map(t => `<span style="padding:6px 12px;border-radius:12px;background:#0a84ff33;color:#0a84ff;margin:4px">${t.toUpperCase()}</span>`).join('')
-    : '';
+  mTags.innerHTML = (job.tags || []).map(t => `<span style="padding:6px 12px;border-radius:12px;background:#0a84ff33;color:#0a84ff;margin:4px">${t.toUpperCase()}</span>`).join('');
   mApply.href = job.apply || '#';
   mApply.style.display = job.apply ? 'block' : 'none';
   modal.dataset.jobId = job.id || '';
@@ -170,7 +152,6 @@ function openModal(job) {
 
 function closeModal() {
   modal.classList.remove("show");
-  // Reset form
   document.getElementById("applyName").value = "";
   document.getElementById("applyEmail").value = "";
   document.getElementById("applyPhone").value = "";
@@ -189,18 +170,15 @@ function hideToast() {
   toast.classList.remove("show");
 }
 
-// Views (Home / Favorites)
+// Views
 function showView(view) {
   currentView = view;
-  render(); // Re-renders with current view filter
+  render();
 }
 
 // Chat Logic
 function openChat(jobId) {
-  if (!jobId) {
-    showToast("Cannot open chat for this job");
-    return;
-  }
+  if (!jobId) return showToast("Cannot open chat");
   currentChatJobId = jobId;
   chatTitle.innerText = document.getElementById('mTitle').innerText || 'Job Chat';
   closeModal();
@@ -218,24 +196,18 @@ function closeChat() {
 
 function loadChatMessages() {
   chatMessages.innerHTML = '<p style="text-align:center;opacity:0.6">Loading chat...</p>';
-
   const chatsRef = firebase.firestore().collection('jobs').doc(currentChatJobId).collection('chats');
-
   chatUnsubscribe = chatsRef.orderBy('timestamp', 'asc').onSnapshot(snap => {
     chatMessages.innerHTML = '';
     if (snap.empty) {
-      chatMessages.innerHTML = '<p style="text-align:center;opacity:0.6">No messages yet. Be the first to chat!</p>';
+      chatMessages.innerHTML = '<p style="text-align:center;opacity:0.6">No messages yet. Start chatting!</p>';
       return;
     }
     snap.forEach(doc => {
       const msg = doc.data();
       const bubble = document.createElement('div');
       bubble.style.cssText = `
-        max-width:80%;
-        padding:12px 16px;
-        border-radius:18px;
-        margin:8px 0;
-        word-wrap:break-word;
+        max-width:80%;padding:12px 16px;border-radius:18px;margin:8px 0;word-wrap:break-word;
         align-self:${msg.isMine ? 'flex-end' : 'flex-start'};
         background:${msg.isMine ? '#0a84ff' : 'rgba(255,255,255,0.1)'};
         color:${msg.isMine ? 'white' : 'var(--text)'};
@@ -255,21 +227,14 @@ function loadChatMessages() {
 function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
-
   const chatsRef = firebase.firestore().collection('jobs').doc(currentChatJobId).collection('chats');
   chatsRef.add({
-    text: text,
+    text,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     isMine: true
-  }).then(() => {
-    chatInput.value = '';
-  }).catch(err => {
-    console.error("Send message error:", err);
-    showToast("Failed to send message");
-  });
+  }).then(() => chatInput.value = '');
 }
 
-// Send on Enter
 chatInput?.addEventListener('keypress', e => {
   if (e.key === 'Enter') {
     e.preventDefault();
@@ -277,11 +242,24 @@ chatInput?.addEventListener('keypress', e => {
   }
 });
 
-// Initial load
-render();
+// Initial render with delay to wait for Firebase sync
+window.addEventListener('load', () => {
+  // Render immediately with local data
+  render();
+  
+  // Show announcement
+  const ann = localStorage.getItem('announcement');
+  if (ann) showToast(ann, 12000);
+  
+  // Re-render after 1 second to catch Firebase sync
+  setTimeout(render, 1000);
+});
 
 // Real-time sync
 window.addEventListener('storage', e => {
   if (e.key === 'jobs') render();
-  if (e.key === 'announcement' && e.newValue) showToast(e.newValue, 10000);
+  if (e.key === 'announcement') {
+    const ann = e.newValue || localStorage.getItem('announcement');
+    if (ann) showToast(ann, 12000);
+  }
 });
