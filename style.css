@@ -348,3 +348,37 @@ body {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(10,132,255,0.2);
 }
+/* =====================
+   FULL-WIDTH MODAL ON DESKTOP
+===================== */
+@media (min-width: 768px) {
+  .modal-card {
+    max-width: 90vw !important;
+    width: 900px;
+    max-height: 90vh;
+  }
+
+  #modalCard {
+    padding: 30px;
+  }
+
+  #mBody {
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  .apply-input,
+  #applyResume,
+  .apply-btn {
+    font-size: 1.05rem;
+    padding: 16px 20px;
+  }
+}
+
+/* Keep mobile compact */
+@media (max-width: 767px) {
+  .modal-card {
+    border-radius: 22px 22px 0 0;
+    height: 90vh;
+  }
+}

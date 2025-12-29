@@ -18,24 +18,28 @@ let currentView = 'home';
 let currentChatJobId = null;
 let chatUnsubscribe = null;
 
-// Load jobs safely with fallback
+// Safely load jobs from localStorage
 function loadJobs() {
   try {
     const stored = JSON.parse(localStorage.getItem("jobs") || "[]");
-    return Array.isArray(stored) ? stored.map(j => ({
+    if (!Array.isArray(stored)) return [];
+    return stored.map(j => ({
       id: j.id || '',
       title: j.title || 'Untitled Job',
       raw: j.raw || '',
       apply: j.apply || '',
+      views: j.views || 0,
+      applies: j.applies || 0,
+      createdAt: j.createdAt || 0,
       tags: extractTags(j.raw || '')
-    })) : [];
+    }));
   } catch (e) {
-    console.error("Load jobs failed:", e);
+    console.error("Failed to load jobs:", e);
     return [];
   }
 }
 
-// Safe tag extraction
+// Extract tags safely
 function extractTags(raw) {
   if (!raw || typeof raw !== 'string') return [];
   const lower = raw.toLowerCase();
@@ -43,13 +47,14 @@ function extractTags(raw) {
   return known.filter(tag => lower.includes(tag));
 }
 
+// Render jobs with search and view filter
 function render(list = loadJobs()) {
   jobList.innerHTML = "";
   const q = search.value.toLowerCase().trim();
   let filtered = list;
 
   if (q) {
-    filtered = filtered.filter(j => 
+    filtered = filtered.filter(j =>
       (j.title || '').toLowerCase().includes(q) ||
       (j.raw || '').toLowerCase().includes(q)
     );
@@ -61,7 +66,7 @@ function render(list = loadJobs()) {
   }
 
   if (filtered.length === 0) {
-    jobList.innerHTML = '<p style="text-align:center;opacity:0.6;padding:40px">No jobs found</p>';
+    jobList.innerHTML = '<p style="text-align:center;opacity:0.6;padding:60px 20px">No jobs found</p>';
     return;
   }
 
@@ -80,9 +85,9 @@ function render(list = loadJobs()) {
             ${(job.tags || []).map(t => `<span style="padding:4px 10px;border-radius:10px;background:#0a84ff33;color:#0a84ff;font-size:0.85rem">${t.toUpperCase()}</span>`).join('')}
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <button onclick="event.stopPropagation(); toggleFavorite('${job.id}')" style="background:none;border:none;font-size:26px;cursor:pointer">${isFavorite(job.id) ? '❤️' : '🤍'}</button>
-          <button onclick="event.stopPropagation(); shareJob(job)" style="background:none;border:none;font-size:26px;cursor:pointer">📤</button>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <button onclick="event.stopPropagation(); toggleFavorite('${job.id}')" style="background:none;border:none;font-size:28px;cursor:pointer">${isFavorite(job.id) ? '❤️' : '🤍'}</button>
+          <button onclick="event.stopPropagation(); shareJobById('${job.id}')" style="background:none;border:none;font-size:28px;cursor:pointer">📤</button>
         </div>
       </div>
     `;
@@ -95,42 +100,70 @@ function render(list = loadJobs()) {
 function toggleFavorite(id) {
   if (!id) return;
   let favs = JSON.parse(localStorage.getItem("favorites") || "[]");
-  if (favs.includes(id)) favs = favs.filter(f => f !== id);
-  else favs.push(id);
+  if (favs.includes(id)) {
+    favs = favs.filter(f => f !== id);
+  } else {
+    favs.push(id);
+  }
   localStorage.setItem("favorites", JSON.stringify(favs));
   render();
 }
 
 function isFavorite(id) {
   if (!id) return false;
-  return JSON.parse(localStorage.getItem("favorites") || "[]").includes(id);
+  const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
+  return favs.includes(id);
 }
 
-// Share
-function shareJob(job) {
-  const url = location.href.split('?')[0];
-  if (navigator.share && job) {
-    navigator.share({
-      title: job.title || 'Job Opening',
-      text: job.raw ? job.raw.split('\n')[0] || '' : '',
-      url: url
-    }).catch(() => {
-      navigator.clipboard.writeText(url);
-      showToast("Link copied!");
-    });
-  } else {
-    navigator.clipboard.writeText(url);
-    showToast("Link copied!");
+// Share - Fixed to work on mobile & desktop
+function shareJobById(jobId) {
+  const jobs = loadJobs();
+  const job = jobs.find(j => j.id === jobId);
+  if (!job) {
+    showToast("Job not found");
+    return;
   }
+
+  const url = location.href.split('?')[0];
+  const title = job.title || "Job Opportunity";
+  const text = job.raw 
+    ? job.raw.split('\n').filter(l => l.trim() && !l.toLowerCase().includes('apply link')).slice(0, 2).join(' | ')
+    : "Check out this job on Interactive Jobs!";
+
+  const shareData = { title, text, url };
+
+  if (navigator.share) {
+    navigator.share(shareData)
+      .then(() => showToast("Shared successfully! 🚀"))
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          copyFallback(url);
+        }
+      });
+  } else {
+    copyFallback(url);
+  }
+}
+
+function copyFallback(url) {
+  navigator.clipboard.writeText(url)
+    .then(() => showToast("Job link copied to clipboard! 📋"))
+    .catch(() => {
+      prompt("Copy this link:", url);
+      showToast("Please copy manually");
+    });
 }
 
 // Quick Apply
 function quickApply() {
   const name = document.getElementById("applyName").value.trim();
   const email = document.getElementById("applyEmail").value.trim();
-  if (!name || !email) return showToast("Name and email required");
-  const subject = encodeURIComponent(`Application: ${mTitle.innerText || 'Position'}`);
-  const body = encodeURIComponent(`Hi,\n\nName: ${name}\nEmail: ${email}\n\nI'm interested in this job.\n\nThanks!`);
+  if (!name || !email) {
+    showToast("Name and email required");
+    return;
+  }
+  const subject = encodeURIComponent(`Job Application: ${mTitle.innerText || 'Position'}`);
+  const body = encodeURIComponent(`Hi,\n\nName: ${name}\nEmail: ${email}\n\nI'm interested in this opportunity.\n\nThank you!`);
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
   showToast("Opening email client...");
 }
@@ -142,7 +175,7 @@ search.oninput = () => render();
 function openModal(job) {
   if (!job) return;
   mTitle.innerText = job.title || 'Untitled Job';
-  mBody.innerText = job.raw || 'No description available';
+  mBody.innerText = job.raw || 'No description';
   mTags.innerHTML = (job.tags || []).map(t => `<span style="padding:6px 12px;border-radius:12px;background:#0a84ff33;color:#0a84ff;margin:4px">${t.toUpperCase()}</span>`).join('');
   mApply.href = job.apply || '#';
   mApply.style.display = job.apply ? 'block' : 'none';
@@ -170,7 +203,7 @@ function hideToast() {
   toast.classList.remove("show");
 }
 
-// Views
+// Views (Home / Favorites)
 function showView(view) {
   currentView = view;
   render();
@@ -178,7 +211,10 @@ function showView(view) {
 
 // Chat Logic
 function openChat(jobId) {
-  if (!jobId) return showToast("Cannot open chat");
+  if (!jobId) {
+    showToast("Cannot open chat");
+    return;
+  }
   currentChatJobId = jobId;
   chatTitle.innerText = document.getElementById('mTitle').innerText || 'Job Chat';
   closeModal();
@@ -200,7 +236,7 @@ function loadChatMessages() {
   chatUnsubscribe = chatsRef.orderBy('timestamp', 'asc').onSnapshot(snap => {
     chatMessages.innerHTML = '';
     if (snap.empty) {
-      chatMessages.innerHTML = '<p style="text-align:center;opacity:0.6">No messages yet. Start chatting!</p>';
+      chatMessages.innerHTML = '<p style="text-align:center;opacity:0.6">No messages yet. Start the conversation!</p>';
       return;
     }
     snap.forEach(doc => {
@@ -219,8 +255,7 @@ function loadChatMessages() {
     });
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }, err => {
-    console.error("Chat load error:", err);
-    showToast("Failed to load chat");
+    showToast("Chat load failed");
   });
 }
 
@@ -242,24 +277,27 @@ chatInput?.addEventListener('keypress', e => {
   }
 });
 
-// Initial render with delay to wait for Firebase sync
+// Announcement on Alert icon
+function showAnnouncement() {
+  const ann = localStorage.getItem('announcement');
+  if (ann) {
+    showToast(ann, 15000);
+  } else {
+    showToast("No current announcement", 4000);
+  }
+}
+
+// Initial load - stable
 window.addEventListener('load', () => {
-  // Render immediately with local data
-  render();
-  
-  // Show announcement
+  render(); // Immediate render from localStorage
   const ann = localStorage.getItem('announcement');
   if (ann) showToast(ann, 12000);
-  
-  // Re-render after 1 second to catch Firebase sync
-  setTimeout(render, 1000);
+  // Re-render after Firebase sync
+  setTimeout(render, 1500);
 });
 
 // Real-time sync
 window.addEventListener('storage', e => {
   if (e.key === 'jobs') render();
-  if (e.key === 'announcement') {
-    const ann = e.newValue || localStorage.getItem('announcement');
-    if (ann) showToast(ann, 12000);
-  }
+  if (e.key === 'announcement' && e.newValue) showToast(e.newValue, 12000);
 });
