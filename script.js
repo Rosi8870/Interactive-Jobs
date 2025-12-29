@@ -18,7 +18,7 @@ let currentView = 'home';
 let currentChatJobId = null;
 let chatUnsubscribe = null;
 
-// Safely load jobs from localStorage
+// Safely load jobs
 function loadJobs() {
   try {
     const stored = JSON.parse(localStorage.getItem("jobs") || "[]");
@@ -39,7 +39,7 @@ function loadJobs() {
   }
 }
 
-// Extract tags safely
+// Safe tag extraction
 function extractTags(raw) {
   if (!raw || typeof raw !== 'string') return [];
   const lower = raw.toLowerCase();
@@ -115,7 +115,7 @@ function isFavorite(id) {
   return favs.includes(id);
 }
 
-// Share - Works on mobile & desktop
+// Share - Fixed & Working
 function shareJobById(jobId) {
   const jobs = loadJobs();
   const job = jobs.find(j => j.id === jobId);
@@ -208,7 +208,7 @@ function hideToast() {
   toast.classList.remove("show");
 }
 
-// Views (Home / Favorites)
+// Views
 function showView(view) {
   currentView = view;
   render();
@@ -263,7 +263,7 @@ function loadChatMessages() {
       `;
       bubble.innerText = msg.text || '';
 
-      // Admin delete button
+      // Admin delete button (only if logged in as admin)
       if (localStorage.getItem("admin") === "true") {
         const delBtn = document.createElement('button');
         delBtn.className = 'chat-admin-delete';
