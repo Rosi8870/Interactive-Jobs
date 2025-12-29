@@ -18,7 +18,7 @@ let currentView = 'home';
 let currentChatJobId = null;
 let chatUnsubscribe = null;
 
-// Load jobs safely
+// Safely load jobs from localStorage
 function loadJobs() {
   try {
     const stored = JSON.parse(localStorage.getItem("jobs") || "[]");
@@ -262,6 +262,23 @@ function loadChatMessages() {
         border-bottom-left-radius:${msg.isMine ? '18px' : '4px'};
       `;
       bubble.innerText = msg.text || '';
+
+      // Admin delete button
+      if (localStorage.getItem("admin") === "true") {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'chat-admin-delete';
+        delBtn.innerHTML = '🗑️';
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (confirm("Delete this message?")) {
+            firebase.firestore().collection('jobs').doc(currentChatJobId).collection('chats').doc(doc.id).delete()
+              .then(() => showToast("Message deleted"))
+              .catch(() => showToast("Delete failed"));
+          }
+        };
+        bubble.appendChild(delBtn);
+      }
+
       chatMessages.appendChild(bubble);
     });
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -296,13 +313,13 @@ chatInput?.addEventListener('keypress', e => {
   }
 });
 
-// Initial load - stable with Firebase sync
+// Initial load - stable
 window.addEventListener('load', () => {
   render(); // Immediate render from localStorage
   const ann = localStorage.getItem('announcement');
   if (ann) showToast(ann, 12000);
 
-  // Re-render after sync
+  // Re-render after Firebase sync
   setTimeout(render, 1500);
 });
 
