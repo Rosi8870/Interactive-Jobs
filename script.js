@@ -1,167 +1,211 @@
 const jobList = document.getElementById("jobList");
 const search = document.getElementById("search");
 const modal = document.getElementById("modal");
-const modalCard = document.getElementById("modalCard");
 const mTitle = document.getElementById("mTitle");
 const mBody = document.getElementById("mBody");
+const mTags = document.getElementById("mTags");
 const mApply = document.getElementById("mApply");
 const toast = document.getElementById("toast");
 const toastText = document.getElementById("toastText");
-const dock = document.getElementById("dock");
 
-/* Jobs */
-const defaultJobs = [
-  {
-    id: 'job_default_1',
-    title: "🎯 iOPEX Walkin Drive",
-    raw: `🎯 iOPEX Walkin Drive
-Role: Finance Executive
-Qualification: Any Graduate
-Experience: 1-4 Years
-Date: 19th December
-https://www.naukri.com/`,
-    apply: "https://www.naukri.com/",
-    views: 0,
-    applies: 0,
-    createdAt: Date.now()
-  }
-];
+// Chat
+const chatModal = document.getElementById("chatModal");
+const chatTitle = document.getElementById("chatTitle");
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
 
-function loadJobs(){
-  const stored = JSON.parse(localStorage.getItem("jobs"));
-  if(!stored) return defaultJobs;
-  const fixed = stored.map(j => ({
-    id: j.id || ('job_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)),
-    title: j.title || ((j.raw||'').split('\n')[0] || 'Untitled'),
-    raw: j.raw || '',
-    apply: j.apply || '',
-    views: Number(j.views||0),
-    applies: Number(j.applies||0),
-    createdAt: j.createdAt || Date.now()
+let currentView = 'home';
+let currentChatJobId = null;
+let chatUnsubscribe = null;
+
+function loadJobs() {
+  const stored = JSON.parse(localStorage.getItem("jobs") || "[]");
+  return stored.map(j => ({
+    ...j,
+    tags: extractTags(j.raw)
   }));
-  // if any job objects changed structure we can persist back
-  if(!stored.every(s => s.id)) saveJobs(fixed);
-  return fixed;
 }
 
-function saveJobs(j){
-  localStorage.setItem("jobs", JSON.stringify(j));
+function extractTags(raw) {
+  const lower = raw.toLowerCase();
+  const known = ['it', 'finance', 'hr', 'sales', 'marketing', 'walk-in', 'remote', 'fresher', 'full-time', 'internship'];
+  return known.filter(tag => lower.includes(tag));
 }
 
-function render(list) {
+function render(list = loadJobs()) {
   jobList.innerHTML = "";
-  list.forEach(job => {
+  const q = search.value.toLowerCase();
+  const filtered = q ? list.filter(j => JSON.stringify(j).toLowerCase().includes(q)) : list;
+
+  filtered.forEach(job => {
     const card = document.createElement("div");
     card.className = "job-card";
-    const lines = (job.raw||"").split('\n').map(l => l.trim()).filter(Boolean);
-    const excerpt = lines[1] ? lines[1] : (lines[0] && lines[0].length>50 ? lines[0].slice(0,50)+"..." : "");
+    const excerpt = job.raw.split('\n').slice(0, 3).join(' ') + (job.raw.split('\n').length > 3 ? '...' : '');
     card.innerHTML = `
-      <h3>${job.title}</h3>
-      <p>${excerpt}</p>
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div style="flex:1">
+          <h3>${job.title}</h3>
+          <p>${excerpt}</p>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
+            ${job.tags.map(t => `<span style="padding:4px 10px;border-radius:10px;background:#0a84ff33;color:#0a84ff;font-size:0.85rem">${t.toUpperCase()}</span>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button onclick="event.stopPropagation(); toggleFavorite('${job.id}')" style="background:none;border:none;font-size:26px;cursor:pointer">${isFavorite(job.id) ? '❤️' : '🤍'}</button>
+          <button onclick="event.stopPropagation(); shareJob(job)" style="background:none;border:none;font-size:26px;cursor:pointer">📤</button>
+        </div>
+      </div>
     `;
     card.onclick = () => openModal(job);
     jobList.appendChild(card);
   });
-} 
+}
 
-render(loadJobs());
+// Favorites
+function toggleFavorite(id) {
+  let favs = JSON.parse(localStorage.getItem("favorites") || "[]");
+  if (favs.includes(id)) favs = favs.filter(f => f !== id);
+  else favs.push(id);
+  localStorage.setItem("favorites", JSON.stringify(favs));
+  render();
+}
 
-// Update UI when storage changes in other windows/tabs
-window.addEventListener('storage', e => {
-  if(e.key === 'jobs') render(loadJobs());
-  if(e.key === 'announcement'){
-    if(e.newValue) showToast(e.newValue);
-  }
-});
+function isFavorite(id) {
+  return JSON.parse(localStorage.getItem("favorites") || "[]").includes(id);
+}
 
-search.oninput = () => {
-  const q = search.value.toLowerCase();
-  render(loadJobs().filter(j => JSON.stringify(j).toLowerCase().includes(q)));
-};
+function loadFavorites() {
+  const all = loadJobs();
+  const favIds = JSON.parse(localStorage.getItem("favorites") || "[]");
+  return all.filter(j => favIds.includes(j.id));
+}
 
-/* Modal */
-function openModal(job) {
-  mTitle.innerText = job.title || 'Job Details';
-  mBody.innerText = job.raw || JSON.stringify(job, null, 2);
-  if(job.apply){
-    mApply.href = job.apply;
-    mApply.style.display = 'block';
+// Share
+function shareJob(job) {
+  const url = location.href.split('?')[0];
+  if (navigator.share) {
+    navigator.share({ title: job.title, text: job.raw.split('\n')[1] || '', url });
   } else {
-    mApply.style.display = 'none';
+    navigator.clipboard.writeText(url);
+    showToast("Link copied!");
   }
-  // set modal job id so apply clicks can be tracked
-  modal.dataset.jobId = job.id || '';
-  // increment view count and persist
-  try{
-    const jobs = loadJobs();
-    const j = jobs.find(x => x.id === job.id);
-    if(j){ j.views = (j.views||0)+1; saveJobs(jobs); render(loadJobs()); }
-  }catch(e){ console.error(e); }
+}
+
+// Quick Apply
+function quickApply() {
+  const name = document.getElementById("applyName").value.trim();
+  const email = document.getElementById("applyEmail").value.trim();
+  if (!name || !email) return showToast("Name and email required");
+  const subject = encodeURIComponent(`Application: ${mTitle.innerText}`);
+  const body = encodeURIComponent(`Hi,\n\nName: ${name}\nEmail: ${email}\n\nI'm interested in this position.\n\nThanks!`);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  showToast("Opening email client...");
+}
+
+// Search
+search.oninput = () => render();
+
+// Modal
+function openModal(job) {
+  mTitle.innerText = job.title;
+  mBody.innerText = job.raw;
+  mTags.innerHTML = job.tags.map(t => `<span style="padding:6px 12px;border-radius:12px;background:#0a84ff33;color:#0a84ff;margin:4px">${t.toUpperCase()}</span>`).join('');
+  mApply.href = job.apply || '#';
+  mApply.style.display = job.apply ? 'block' : 'none';
+  modal.dataset.jobId = job.id;
   modal.classList.add("show");
 }
 
 function closeModal() {
   modal.classList.remove("show");
+  document.getElementById("applyName").value = "";
+  document.getElementById("applyEmail").value = "";
+  document.getElementById("applyPhone").value = "";
+  document.getElementById("applyResume").value = "";
 }
 
-modal.onclick = e => {
-  if (e.target === modal) closeModal();
-};
-
-/* Toast */
-function showToast(text, duration = 5000){
-  toastText.innerText = text || '';
+// Toast
+function showToast(text, duration = 5000) {
+  toastText.innerText = text;
   toast.classList.add('show');
-  if(window._toastTimeout) clearTimeout(window._toastTimeout);
+  clearTimeout(window._toastTimeout);
   window._toastTimeout = setTimeout(hideToast, duration);
-}
-
-function showAnnouncement(){
-  const ann = localStorage.getItem('announcement') || "No announcements currently.";
-  showToast(ann);
 }
 
 function hideToast() {
   toast.classList.remove("show");
 }
 
-// Track when users click Apply in the modal
-mApply.addEventListener('click', () => {
-  const id = modal.dataset.jobId;
-  if(!id) return;
-  try{
-    const jobs = loadJobs();
-    const j = jobs.find(x=>x.id === id);
-    if(j){ j.applies = (j.applies||0)+1; saveJobs(jobs); render(loadJobs()); }
-  }catch(e){ console.error(e); }
-});
-
-/* Dock actions */
-function scrollToTop() {
-  jobList.scrollTo({ top: 0, behavior: "smooth" });
+// Views
+function showView(view) {
+  currentView = view;
+  if (view === 'favorites') render(loadFavorites());
+  else render();
 }
 
-function openTelegram() {
-  window.open("https://t.me/INTERACTIVE_JOBS/148", "_blank");
+// Chat Logic
+function openChat(jobId) {
+  if (!jobId) return showToast("Cannot open chat");
+  currentChatJobId = jobId;
+  chatTitle.innerText = document.getElementById('mTitle').innerText;
+  closeModal();
+  chatModal.classList.add("show");
+  loadChatMessages();
 }
 
-function openWhatsApp() {
-  window.open("https://chat.whatsapp.com/HYRvmpKpwQlHURWUFoFBev", "_blank");
+function closeChat() {
+  chatModal.classList.remove("show");
+  chatMessages.innerHTML = '';
+  if (chatUnsubscribe) chatUnsubscribe();
+  currentChatJobId = null;
+  chatInput.value = '';
 }
 
-/* Magnetic Dock (Desktop only) */
-if (window.matchMedia("(hover: hover)").matches) {
-  dock.addEventListener("mousemove", e => {
-    const rect = dock.getBoundingClientRect();
-    [...dock.children].forEach(item => {
-      const r = item.getBoundingClientRect();
-      const d = Math.abs(e.clientX - (r.left + r.width / 2));
-      const f = Math.max(0, 1 - d / 120);
-      item.style.transform = `scale(${1 + f * 0.25})`;
+function loadChatMessages() {
+  chatMessages.innerHTML = '<p style="text-align:center;opacity:0.6">Loading...</p>';
+  const chatsRef = firebase.firestore().collection('jobs').doc(currentChatJobId).collection('chats');
+  chatUnsubscribe = chatsRef.orderBy('timestamp', 'asc').onSnapshot(snap => {
+    chatMessages.innerHTML = '';
+    if (snap.empty) {
+      chatMessages.innerHTML = '<p style="text-align:center;opacity:0.6">No messages yet. Start chatting!</p>';
+    }
+    snap.forEach(doc => {
+      const msg = doc.data();
+      const bubble = document.createElement('div');
+      bubble.style.cssText = `
+        max-width:80%;padding:12px 16px;border-radius:18px;margin:8px 0;word-wrap:break-word;
+        align-self:${msg.isMine ? 'flex-end' : 'flex-start'};
+        background:${msg.isMine ? '#0a84ff' : 'rgba(255,255,255,0.1)'};
+        color:${msg.isMine ? 'white' : 'var(--text)'};
+        border-bottom-right-radius:${msg.isMine ? '4px' : '18px'};
+        border-bottom-left-radius:${msg.isMine ? '18px' : '4px'};
+      `;
+      bubble.innerText = msg.text;
+      chatMessages.appendChild(bubble);
     });
-  });
-
-  dock.addEventListener("mouseleave", () => {
-    [...dock.children].forEach(i => i.style.transform = "");
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
+
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  const chatsRef = firebase.firestore().collection('jobs').doc(currentChatJobId).collection('chats');
+  chatsRef.add({
+    text,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    isMine: true
+  }).then(() => chatInput.value = '');
+}
+
+// Enter to send
+chatInput?.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+
+// Initial render
+render();
+
+// Sync updates
+window.addEventListener('storage', e => {
+  if (e.key === 'jobs') render();
+  if (e.key === 'announcement' && e.newValue) showToast(e.newValue, 10000);
+});

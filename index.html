@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" manifest="manifest.json">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Interactive Jobs</title>
+<meta name="description" content="Latest walk-ins, freshers & experienced job openings - real-time updates">
+<meta name="theme-color" content="#0b1016">
 
 <link rel="stylesheet" href="style.css" />
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
@@ -15,8 +19,9 @@
   <p>Latest verified walk-ins & job openings</p>
 </header>
 
+<!-- Small Clean Search -->
 <div class="search-wrapper">
-  <input id="search" placeholder="Search job title, role, company..." />
+  <input id="search" placeholder="🔍 Search job title, company, location, skills..." />
 </div>
 
 <section class="jobs" id="jobList"></section>
@@ -27,21 +32,54 @@
   <button onclick="hideToast()">✕</button>
 </div>
 
-<!-- Modal -->
+<!-- Job Modal -->
 <div class="modal" id="modal">
-  <div class="modal-card" id="modalCard" tabindex="0">
+  <div class="modal-card" id="modalCard">
     <button class="close-btn" onclick="closeModal()">✕</button>
     <h2 id="mTitle"></h2>
+    <div id="mTags" style="margin:12px 0;display:flex;flex-wrap:wrap;gap:8px"></div>
     <pre id="mBody"></pre>
-    <a id="mApply" target="_blank" class="apply-btn">Apply Now</a>
+
+    <!-- Quick Apply -->
+    <div id="quickApply" style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
+      <h3 style="margin-bottom:14px">🚀 Quick Apply</h3>
+      <input id="applyName" placeholder="Your Name" class="apply-input">
+      <input id="applyEmail" type="email" placeholder="Email" class="apply-input">
+      <input id="applyPhone" placeholder="Phone (optional)" class="apply-input">
+      <input type="file" id="applyResume" accept=".pdf,.doc,.docx" style="margin:12px 0;padding:10px;background:rgba(255,255,255,0.08);border-radius:12px;color:white">
+      <a id="mApply" target="_blank" class="apply-btn">Apply on Company Site</a>
+      <button onclick="quickApply()" class="apply-btn" style="margin-top:10px;background:#0a84ff">Send Resume via Email</button>
+    </div>
+
+    <!-- Chat Button -->
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
+      <button onclick="openChat(modal.dataset.jobId)" class="apply-btn" style="background:#25D366;color:white">💬 Chat with Poster (Anonymous)</button>
+    </div>
   </div>
 </div>
 
-<!-- iOS Dock -->
+<!-- Chat Modal -->
+<div class="modal" id="chatModal">
+  <div class="modal-card chat-card">
+    <button class="close-btn" onclick="closeChat()">✕</button>
+    <h2>Chat: <span id="chatTitle"></span></h2>
+    <div id="chatMessages" style="flex:1;overflow-y:auto;padding:10px;max-height:60vh;display:flex;flex-direction:column"></div>
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <input id="chatInput" placeholder="Type a message..." style="flex:1;padding:14px;border-radius:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:white;font-size:1rem">
+      <button onclick="sendMessage()" style="padding:14px 20px;border-radius:16px;background:#0a84ff;border:none;color:white;font-weight:600">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dock (Map icon removed) -->
 <div class="dock" id="dock">
-  <div class="dock-item" onclick="scrollToTop()">
+  <div class="dock-item" onclick="showView('home')">
     <span class="material-icons">home</span>
     <span>Home</span>
+  </div>
+  <div class="dock-item" onclick="showView('favorites')">
+    <span class="material-icons">favorite</span>
+    <span>Favorites</span>
   </div>
   <div class="dock-item" onclick="openTelegram()">
     <span class="material-icons">chat</span>
@@ -60,14 +98,21 @@
 <script src="firebase.js"></script>
 <script src="script.js"></script>
 <script>
-// Expose functions for firebase.js to update UI
+// PWA Install
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+// Expose for firebase.js
 window.render = render;
 window.showToast = showToast;
 
-// Show announcement on load
+// Show announcement
 window.addEventListener('load', () => {
   const ann = localStorage.getItem('announcement');
-  if (ann) showToast(ann, 10000);
+  if (ann) showToast(ann, 12000);
 });
 </script>
 </body>
