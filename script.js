@@ -39,7 +39,7 @@ function loadJobs() {
   }
 }
 
-// Safe tag extraction
+// Extract tags
 function extractTags(raw) {
   if (!raw || typeof raw !== 'string') return [];
   const lower = raw.toLowerCase();
@@ -115,7 +115,7 @@ function isFavorite(id) {
   return favs.includes(id);
 }
 
-// Share - Fixed & Working
+// Share
 function shareJobById(jobId) {
   const jobs = loadJobs();
   const job = jobs.find(j => j.id === jobId);
@@ -153,8 +153,23 @@ function copyFallback(url) {
     });
 }
 
-// Quick Apply
-function quickApply() {
+// Increment View & Apply
+function incrementView(jobId) {
+  if (!jobId || !window.firebaseEnabled) return;
+  firebase.firestore().collection('jobs').doc(jobId).update({
+    views: firebase.firestore.FieldValue.increment(1)
+  }).catch(() => {});
+}
+
+function incrementApply(jobId) {
+  if (!jobId || !window.firebaseEnabled) return;
+  firebase.firestore().collection('jobs').doc(jobId).update({
+    applies: firebase.firestore.FieldValue.increment(1)
+  }).catch(() => {});
+}
+
+// Quick Apply (with apply count)
+function quickApply(jobId) {
   const name = document.getElementById("applyName").value.trim();
   const email = document.getElementById("applyEmail").value.trim();
   const phone = document.getElementById("applyPhone").value.trim();
@@ -163,6 +178,9 @@ function quickApply() {
     showToast("Name and email are required");
     return;
   }
+
+  // Increment apply count
+  incrementApply(jobId);
 
   const subject = encodeURIComponent(`Job Application: ${mTitle.innerText || 'Position'}`);
   const body = encodeURIComponent(
@@ -176,7 +194,7 @@ function quickApply() {
 // Search
 search.oninput = () => render();
 
-// Modal
+// Modal (with view count)
 function openModal(job) {
   if (!job) return;
   mTitle.innerText = job.title || 'Untitled Job';
@@ -185,6 +203,10 @@ function openModal(job) {
   mApply.href = job.apply || '#';
   mApply.style.display = job.apply ? 'block' : 'none';
   modal.dataset.jobId = job.id || '';
+
+  // Increment view count
+  incrementView(job.id);
+
   modal.classList.add("show");
 }
 
@@ -263,7 +285,7 @@ function loadChatMessages() {
       `;
       bubble.innerText = msg.text || '';
 
-      // Admin delete button (only if logged in as admin)
+      // Admin delete button
       if (localStorage.getItem("admin") === "true") {
         const delBtn = document.createElement('button');
         delBtn.className = 'chat-admin-delete';
