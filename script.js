@@ -47,12 +47,12 @@ function extractTags(raw) {
   return known.filter(tag => lower.includes(tag));
 }
 
-// Increment View & Apply in Firestore
+// Increment View & Apply
 function incrementView(jobId) {
   if (!jobId || !window.firebaseEnabled) return;
   firebase.firestore().collection('jobs').doc(jobId).update({
     views: firebase.firestore.FieldValue.increment(1)
-  }).catch(() => {}); // Silent if offline
+  }).catch(() => {});
 }
 
 function incrementApply(jobId) {
@@ -204,7 +204,7 @@ function openModal(job) {
   mApply.style.display = job.apply ? 'block' : 'none';
   modal.dataset.jobId = job.id || '';
 
-  // Increment view count when modal opens
+  // Increment view count
   incrementView(job.id);
 
   modal.classList.add("show");
@@ -234,6 +234,31 @@ function hideToast() {
 function showView(view) {
   currentView = view;
   render();
+}
+
+// WhatsApp & Telegram Dock Icons
+function openWhatsApp() {
+  // Replace with your actual WhatsApp group/channel link
+  const link = "https://chat.whatsapp.com/HYRvmpKpwQlHURWUFoFBev";
+  window.open(link, "_blank");
+  showToast("Opening WhatsApp...");
+}
+
+function openTelegram() {
+  // Replace with your actual Telegram group/channel link
+  const link = "https://t.me/INTERACTIVE_JOBS";
+  window.open(link, "_blank");
+  showToast("Opening Telegram...");
+}
+
+// Show Announcement on Alert click
+function showAnnouncement() {
+  const ann = localStorage.getItem('announcement');
+  if (ann) {
+    showToast(ann, 15000);
+  } else {
+    showToast("No current announcement", 4000);
+  }
 }
 
 // Chat Logic
