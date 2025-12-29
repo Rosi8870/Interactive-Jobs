@@ -4,18 +4,25 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Interactive Jobs</title>
-<meta name="description" content="Latest walk-ins, freshers & experienced job openings">
+<meta name="description" content="Latest walk-ins, freshers & experienced job openings - real-time updates">
 <meta name="theme-color" content="#0b1016">
 
 <link rel="stylesheet" href="style.css" />
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-
-<!-- PWA Manifest (use placeholder icons to avoid 404) -->
 <link rel="manifest" href="manifest.json">
 
-<!-- Fallback icons (simple base64 placeholders to avoid 404 errors) -->
+<!-- Fallback icons to avoid 404 -->
 <link rel="apple-touch-icon" sizes="192x192" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
 <link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+
+<!-- Google for Jobs JSON-LD (Dynamic) -->
+<script type="application/ld+json" id="google-jobs-schema">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": []
+}
+</script>
 </head>
 <body>
 
@@ -24,6 +31,7 @@
   <p>Latest verified walk-ins & job openings</p>
 </header>
 
+<!-- Small Clean Search -->
 <div class="search-wrapper">
   <input id="search" placeholder="🔍 Search job title, company, location, skills..." />
 </div>
@@ -44,16 +52,16 @@
     <div id="mTags" style="margin:12px 0;display:flex;flex-wrap:wrap;gap:8px"></div>
     <pre id="mBody"></pre>
 
-    <div id="quickApply" style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
-      <h3 style="margin-bottom:14px">🚀 Quick Apply</h3>
-      <input id="applyName" placeholder="Your Name" class="apply-input">
-      <input id="applyEmail" type="email" placeholder="Email" class="apply-input">
-      <input id="applyPhone" placeholder="Phone (optional)" class="apply-input">
-      <input type="file" id="applyResume" accept=".pdf,.doc,.docx" style="margin:12px 0;padding:10px;background:rgba(255,255,255,0.08);border-radius:12px;color:white">
+    <!-- Apply Button Only -->
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
       <a id="mApply" target="_blank" class="apply-btn" onclick="incrementApply(modal.dataset.jobId)">Apply on Company Site</a>
-      <button onclick="quickApply(modal.dataset.jobId)" class="apply-btn" style="margin-top:10px;background:#0a84ff">Send Resume via Email</button>
+      
+      <p style="font-size:0.9rem;opacity:0.8;margin-top:12px;text-align:center">
+        You will be redirected to the company website to apply.
+      </p>
     </div>
 
+    <!-- Chat Button -->
     <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1)">
       <button onclick="openChat(modal.dataset.jobId)" class="apply-btn" style="background:#25D366;color:white">💬 Chat with Poster (Anonymous)</button>
     </div>
@@ -104,7 +112,7 @@
 function showAnnouncement() {
   const ann = localStorage.getItem('announcement');
   if (ann) {
-    showToast(ann, 15000); // Longer duration
+    showToast(ann, 15000);
   } else {
     showToast("No current announcement", 4000);
   }

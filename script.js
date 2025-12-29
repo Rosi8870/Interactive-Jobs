@@ -62,6 +62,51 @@ function incrementApply(jobId) {
   }).catch(() => {});
 }
 
+// Google for Jobs - JSON-LD Structured Data
+function updateGoogleJobsSchema() {
+  const jobs = loadJobs();
+  const itemListElement = jobs.map((job, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "item": {
+      "@type": "JobPosting",
+      "title": job.title || "Job Opportunity",
+      "description": job.raw.replace(/\n/g, '<br>') || "Job details available",
+      "datePosted": job.createdAt ? new Date(job.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      "validThrough": "2026-12-31",
+      "employmentType": "FULL_TIME",
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": "Various Companies",
+        "sameAs": location.href
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "India",
+          "addressCountry": "IN"
+        }
+      },
+      "applicantLocationRequirements": {
+        "@type": "Country",
+        "name": "IN"
+      },
+      "directApply": true,
+      "apply": job.apply || location.href
+    }
+  }));
+
+  const schemaScript = document.getElementById('google-jobs-schema');
+  if (schemaScript) {
+    schemaScript.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": itemListElement
+    }, null, 2);
+  }
+}
+
 // Render jobs
 function render(list = loadJobs()) {
   jobList.innerHTML = "";
@@ -109,6 +154,9 @@ function render(list = loadJobs()) {
     card.onclick = () => openModal(job);
     jobList.appendChild(card);
   });
+
+  // Update Google for Jobs schema
+  updateGoogleJobsSchema();
 }
 
 // Favorites
@@ -168,29 +216,6 @@ function copyFallback(url) {
     });
 }
 
-// Quick Apply (with apply count)
-function quickApply(jobId) {
-  const name = document.getElementById("applyName").value.trim();
-  const email = document.getElementById("applyEmail").value.trim();
-  const phone = document.getElementById("applyPhone").value.trim();
-
-  if (!name || !email) {
-    showToast("Name and email are required");
-    return;
-  }
-
-  // Increment apply count
-  incrementApply(jobId);
-
-  const subject = encodeURIComponent(`Job Application: ${mTitle.innerText || 'Position'}`);
-  const body = encodeURIComponent(
-    `Hi,\n\nMy name is ${name}.\nEmail: ${email}\n${phone ? 'Phone: ' + phone + '\n' : ''}\n\nI am interested in this job opportunity.\n\nThank you!`
-  );
-
-  window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  showToast("Opening your email app...");
-}
-
 // Search
 search.oninput = () => render();
 
@@ -212,10 +237,6 @@ function openModal(job) {
 
 function closeModal() {
   modal.classList.remove("show");
-  document.getElementById("applyName").value = "";
-  document.getElementById("applyEmail").value = "";
-  document.getElementById("applyPhone").value = "";
-  document.getElementById("applyResume").value = "";
 }
 
 // Toast
@@ -236,17 +257,15 @@ function showView(view) {
   render();
 }
 
-// WhatsApp & Telegram Dock Icons
+// WhatsApp & Telegram
 function openWhatsApp() {
-  // Replace with your actual WhatsApp group/channel link
-  const link = "https://chat.whatsapp.com/HYRvmpKpwQlHURWUFoFBev";
+  const link = "https://chat.whatsapp.com/HYRvmpKpwQlHURWUFoFBev"; // Replace with your link
   window.open(link, "_blank");
   showToast("Opening WhatsApp...");
 }
 
 function openTelegram() {
-  // Replace with your actual Telegram group/channel link
-  const link = "https://t.me/INTERACTIVE_JOBS";
+  const link = "https://t.me/INTERACTIVE_JOBS"; // Replace with your link
   window.open(link, "_blank");
   showToast("Opening Telegram...");
 }
